@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeBook</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f0e8;--bg2:#ede8dc;--ink:#1a1610;--ink2:#3d3628;--muted:#8a7e6e;
+  --border:#cfc8b8;--export:#c8401a;--export-light:#f5ede9;--import:#1a5c8a;
+  --import-light:#e6eff5;--gold:#b8860b;--surface:#fff;
+  --shadow:0 2px 16px rgba(26,22,16,0.08);--r:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
+body::after{content:'';position:fixed;top:0;right:0;width:320px;height:100vh;background:repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(26,22,16,.04) 39px,rgba(26,22,16,.04) 40px);pointer-events:none;z-index:0}
+
+header{position:relative;z-index:10;background:var(--ink);color:var(--bg);padding:0 40px;display:flex;align-items:stretch;min-height:68px;border-bottom:3px solid var(--gold)}
+.header-brand{display:flex;align-items:center;gap:16px;padding:14px 28px 14px 0;border-right:1px solid rgba(255,255,255,.1);margin-right:28px}
+.brand-mark{width:36px;height:36px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.brand-name{font-family:'Playfair Display',serif;font-weight:900;font-size:22px;letter-spacing:-.5px;line-height:1;color:#fff}
+.brand-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-top:2px}
+.header-nav{display:flex;align-items:center;gap:2px}
+.nav-tab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 22px;border:none;background:transparent;color:rgba(245,240,232,.45);cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-3px;white-space:nowrap}
+.nav-tab:hover{color:rgba(245,240,232,.8)}
+.nav-tab.active-export{color:#fff;border-bottom-color:var(--export);background:rgba(200,64,26,.1)}
+.nav-tab.active-import{color:#fff;border-bottom-color:var(--import);background:rgba(26,92,138,.12)}
+.header-right{display:flex;align-items:center;gap:20px;margin-left:auto;padding-left:24px;border-left:1px solid rgba(255,255,255,.1)}
+.stat-pill{font-family:'IBM Plex Mono',monospace;font-size:10px;display:flex;align-items:center;gap:6px;color:rgba(245,240,232,.5)}
+.stat-num{font-size:16px;font-weight:500;color:#fff}
+.stat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.conn-status{font-family:'IBM Plex Mono',monospace;font-size:10px;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.15);color:rgba(245,240,232,.6)}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:#666;transition:background .3s}
+.conn-dot.ok{background:#2ecc71}
+.conn-dot.err{background:#e74c3c}
+.conn-dot.loading{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40px 60px}
+
+.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:28px;animation:fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.search-wrap{flex:1;position:relative}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.4;pointer-events:none}
+.search-input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 14px 11px 38px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s;box-shadow:var(--shadow)}
+.search-input::placeholder{color:var(--muted)}
+.search-input:focus{border-color:var(--export);box-shadow:0 0 0 3px rgba(200,64,26,.1)}
+.search-input.import-mode:focus{border-color:var(--import);box-shadow:0 0 0 3px rgba(26,92,138,.1)}
+.view-toggle{display:flex;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.view-btn{padding:10px 13px;border:none;background:transparent;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s;border-right:1px solid var(--border)}
+.view-btn:last-child{border-right:none}
+.view-btn.active{background:var(--ink);color:#fff}
+.btn-new{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:11px 22px;border:none;border-radius:var(--r);cursor:pointer;transition:all .18s;box-shadow:var(--shadow);white-space:nowrap}
+.btn-new:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.btn-new.export{background:var(--export);color:#fff}
+.btn-new.import{background:var(--import);color:#fff}
+.btn-new:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+.section-header{display:flex;align-items:baseline;gap:14px;margin-bottom:20px;animation:fadeUp .4s .05s ease both}
+.section-title{font-family:'Playfair Display',serif;font-weight:700;font-size:28px;letter-spacing:-.5px;color:var(--ink)}
+.section-count{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:2px 10px}
+
+#cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px}
+#cards-grid.list-view{grid-template-columns:1fr}
+
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;animation:fadeUp .35s ease both;position:relative}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(26,22,16,.12)}
+.card-stripe{height:4px;width:100%}
+.card.export .card-stripe{background:var(--export)}
+.card.import .card-stripe{background:var(--import)}
+.card-body{padding:20px 22px 16px}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+.company-name{font-family:'Playfair Display',serif;font-weight:700;font-size:18px;color:var(--ink);line-height:1.2;margin-bottom:3px}
+.company-location{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.3px}
+.type-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 9px;border-radius:2px;flex-shrink:0;margin-top:3px}
+.type-badge.export{background:var(--export-light);color:var(--export);border:1px solid rgba(200,64,26,.2)}
+.type-badge.import{background:var(--import-light);color:var(--import);border:1px solid rgba(26,92,138,.2)}
+.card-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bg2)}
+.meta-item{display:flex;align-items:flex-start;gap:5px;font-size:12px;color:var(--ink2);max-width:100%}
+.meta-icon{font-size:11px;color:var(--muted);flex-shrink:0;margin-top:1px}
+.meta-text{word-break:break-all}
+.products-tag{background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink2);display:inline-block;margin:2px 2px 0 0}
+.contacts-head{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.contact-row{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg);border-radius:3px;margin-bottom:5px;border-left:2px solid transparent;transition:background .15s}
+.contact-row:hover{background:var(--bg2)}
+.contact-row.is-main.export{border-left-color:var(--export)}
+.contact-row.is-main.import{border-left-color:var(--import)}
+.contact-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:12px;font-weight:700;flex-shrink:0}
+.contact-avatar.export{background:var(--export-light);color:var(--export)}
+.contact-avatar.import{background:var(--import-light);color:var(--import)}
+.contact-info{flex:1;min-width:0}
+.contact-name-text{font-size:12px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star-badge{font-size:10px;color:var(--gold);flex-shrink:0}
+.card-footer{display:flex;gap:6px;padding:10px 22px 14px;border-top:1px solid var(--bg2)}
+.btn-action{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.5px;padding:6px 13px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-action:hover{border-color:var(--ink);color:var(--ink);background:var(--bg)}
+.btn-action.danger:hover{border-color:#c0392b;color:#c0392b}
+
+.list-view .card{display:flex;align-items:stretch}
+.list-view .card-stripe{width:4px;height:auto;flex-shrink:0}
+.list-view .card-body{flex:1;padding:14px 20px;display:flex;align-items:center;gap:20px}
+.list-view .card-top{margin-bottom:0;flex-shrink:0;width:240px}
+.list-view .card-meta{margin-bottom:0;padding-bottom:0;border-bottom:none;flex:1}
+.list-view .contacts-section{display:none}
+.list-view .card-footer{padding:14px 16px;border-top:none;border-left:1px solid var(--bg2);flex-direction:column;justify-content:center}
+
+/* Loading skeleton */
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--border) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;height:14px;margin-bottom:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 20px}
+.empty-icon{font-size:56px;margin-bottom:16px;opacity:.5;display:block}
+.empty-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--ink2);margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--muted)}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,22,16,.6);backdrop-filter:blur(3px);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);width:100%;max-width:620px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(26,22,16,.25);animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-stripe{height:4px}
+.modal-stripe.export{background:var(--export)}
+.modal-stripe.import{background:var(--import)}
+.modal-inner{padding:28px 30px 24px}
+.modal-title{font-family:'Playfair Display',serif;font-weight:700;font-size:22px;margin-bottom:22px;color:var(--ink)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.full{grid-template-columns:1fr}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:2px}
+.fg label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.fg input,.fg select{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;transition:border-color .2s}
+.fg input:focus,.fg select:focus{border-color:var(--export)}
+.fg input.import-field:focus{border-color:var(--import)}
+.fg input::placeholder{color:var(--muted)}
+.divider-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin:20px 0 12px;display:flex;align-items:center;gap:12px}
+.divider-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.contact-block{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;position:relative}
+.btn-remove{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;transition:color .15s}
+.btn-remove:hover{color:#c0392b}
+.check-row{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--ink2)}
+.check-row input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--export)}
+.btn-add-contact{width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:var(--r);background:transparent;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.5px;color:var(--muted);cursor:pointer;margin-bottom:20px;transition:all .15s}
+.btn-add-contact:hover{border-color:var(--export);color:var(--export)}
+.btn-add-contact.import-mode:hover{border-color:var(--import);color:var(--import)}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 30px;border-top:1px solid var(--border);background:var(--bg)}
+.btn-cancel{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px 20px;border-radius:var(--r);border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-cancel:hover{border-color:var(--ink);color:var(--ink)}
+.btn-save{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:10px 24px;border-radius:var(--r);border:none;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px}
+.btn-save:hover:not(:disabled){opacity:.88;transform:translateY(-1px)}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.btn-save.export{background:var(--export);color:#fff}
+.btn-save.import{background:var(--import);color:#fff}
+.spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
+.spinner.show{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.toast{position:fixed;bottom:28px;right:28px;background:var(--ink);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:12px 20px;border-radius:var(--r);z-index:2000;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.2);border-left:3px solid var(--gold)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{border-left-color:#e74c3c}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--ink);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
+#login-screen.hidden{display:none}
+.login-box{width:100%;max-width:380px;padding:48px 44px;background:var(--surface);border-radius:6px;box-shadow:0 32px 80px rgba(0,0,0,.4);border-top:4px solid var(--gold)}
+.login-anchor{font-family:'Playfair Display',serif;font-weight:900;font-size:32px;color:var(--ink);margin-bottom:4px;letter-spacing:-1px}
+.login-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:32px}
+.login-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.login-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);outline:none;transition:border-color .2s;margin-bottom:6px}
+.login-input:focus{border-color:var(--gold)}
+.login-error{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c0392b;min-height:18px;margin-bottom:14px;display:block}
+.login-btn{width:100%;padding:13px;background:var(--ink);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .2s}
+.login-btn:hover{opacity:.85}
+.login-watermark{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(245,240,232,.2);margin-top:24px;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-anchor">TradeBook</div>
+    <div class="login-sub">Gestão de Contatos</div>
+    <label class="login-label" for="login-pass">Senha de acesso</label>
+    <input class="login-input" id="login-pass" type="password" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <span class="login-error" id="login-error"></span>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+  </div>
+  <div class="login-watermark">TradeBook © 2026</div>
+</div>
+
+<header>
+  <div class="header-brand">
+    <div class="brand-mark">⚓</div>
+    <div>
+      <div class="brand-name">TradeBook</div>
+      <div class="brand-sub">Gestão de Contatos</div>
+    </div>
+  </div>
+  <div class="header-nav">
+    <button class="nav-tab active-export" id="tab-export" onclick="switchTab('export')">🇧🇷 Exportadores</button>
+    <button class="nav-tab" id="tab-import" onclick="switchTab('import')">🌍 Importadores</button>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill"><span class="stat-dot" style="background:#c8401a"></span><span class="stat-num" id="count-export">–</span>&nbsp;export.</div>
+    <div class="stat-pill"><span class="stat-dot" style="background:#1a5c8a"></span><span class="stat-num" id="count-import">–</span>&nbsp;import.</div>
+    <div class="conn-status"><span class="conn-dot loading" id="conn-dot"></span><span id="conn-label">Conectando…</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="search-input" type="text" placeholder="Buscar por empresa, país, produto, contato…" oninput="renderCards()">
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="vbtn-grid" title="Grade" onclick="setView('grid')">⊞</button>
+      <button class="view-btn" id="vbtn-list" title="Lista" onclick="setView('list')">≡</button>
+    </div>
+    <button class="btn-new export" id="btn-new" onclick="openModal()">+ Nova Empresa</button>
+  </div>
+  <div class="section-header">
+    <div class="section-title" id="section-title">Exportadores</div>
+    <span class="section-count" id="section-count">–</span>
+  </div>
+  <div id="cards-grid"></div>
+</main>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-stripe export" id="modal-stripe"></div>
+    <div class="modal-inner">
+      <div class="modal-title" id="modal-title">Nova Empresa</div>
+      <div class="form-grid">
+        <div class="fg"><label>Nome da Empresa *</label><input id="f-name" type="text" placeholder="Ex: Frutex Nordeste Ltda"></div>
+        <div class="fg"><label id="doc-label">CNPJ</label><input id="f-doc" type="text" placeholder="00.000.000/0001-00"></div>
+      </div>
+      <div class="form-grid">
+        <div class="fg"><label id="city-label">Cidade / Estado</label><input id="f-city" type="text" placeholder="Ex: Petrolina, PE"></div>
+        <div class="fg" id="country-fg" style="display:none"><label>País</label><input id="f-country" type="text" placeholder="Ex: Países Baixos"></div>
+      </div>
+      <div class="form-grid">
+        <div class="fg"><label>E-mail Corporativo</label><input id="f-email" type="email" placeholder="contato@empresa.com"></div>
+        <div class="fg"><label>Website</label><input id="f-site" type="text" placeholder="www.empresa.com"></div>
+      </div>
+      <div class="form-grid full">
+        <div class="fg"><label id="products-label">Produtos Exportados</label><input id="f-products" type="text" placeholder="Ex: Manga Tommy, Melão Amarelo, Uva Thompson"></div>
+      </div>
+      <div class="form-grid full">
+        <div class="fg"><label>Observações</label><input id="f-notes" type="text" placeholder="Notas internas, certificações…"></div>
+      </div>
+      <div class="divider-label">Contatos</div>
+      <div id="contacts-container"></div>
+      <button class="btn-add-contact" id="btn-add-contact" onclick="addContactField()">+ Adicionar contato</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save export" id="btn-save" onclick="saveCompany()">
+        <span class="spinner" id="save-spinner"></span>
+        <span id="save-label">Salvar Empresa</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://damjldmgwksxigxtkass.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Nl1xGdyZ1aokQx6QvM-cLw_2Liig24Q';
+
+const api = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+  headers: {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': opts.prefer || 'return=representation',
+    ...opts.headers
+  },
+  ...opts
+});
+
+// ── STATE ────────────────────────────────────────────────
+let currentTab = 'export';
+let currentView = 'grid';
+let editingId = null;
+let contactCount = 0;
+let cache = { export: [], import: [] };
+let loading = false;
+
+// ── TOAST ────────────────────────────────────────────────
+function toast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── CONNECTION CHECK ─────────────────────────────────────
+async function checkConnection() {
+  try {
+    const r = await api('/companies?select=id&limit=1');
+    if (r.ok) {
+      document.getElementById('conn-dot').className = 'conn-dot ok';
+      document.getElementById('conn-label').textContent = 'Supabase ✓';
+    } else {
+      throw new Error(r.status);
+    }
+  } catch(e) {
+    document.getElementById('conn-dot').className = 'conn-dot err';
+    document.getElementById('conn-label').textContent = 'Erro de conexão';
+    toast('⚠ Não foi possível conectar ao Supabase', true);
+  }
+}
+
+// ── LOAD DATA ────────────────────────────────────────────
+async function loadAll() {
+  loading = true;
+  showSkeletons();
+  try {
+    // Load companies + contacts in parallel
+    const [cRes, ctRes] = await Promise.all([
+      api('/companies?select=*&order=created_at.desc'),
+      api('/contacts?select=*&order=created_at.asc')
+    ]);
+
+    if (!cRes.ok) throw new Error(await cRes.text());
+    if (!ctRes.ok) throw new Error(await ctRes.text());
+
+    const companies = await cRes.json();
+    const contacts  = await ctRes.json();
+
+    // Group contacts by company_id
+    const ctMap = {};
+    contacts.forEach(ct => {
+      if (!ctMap[ct.company_id]) ctMap[ct.company_id] = [];
+      ctMap[ct.company_id].push(ct);
+    });
+
+    // Attach contacts to companies
+    companies.forEach(c => { c.contacts = ctMap[c.id] || []; });
+
+    cache.export = companies.filter(c => c.type === 'export');
+    cache.import = companies.filter(c => c.type === 'import');
+
+    updateStats();
+    renderCards();
+  } catch(e) {
+    toast('Erro ao carregar dados: ' + e.message, true);
+    document.getElementById('cards-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <span class="empty-icon">⚠️</span>
+      <div class="empty-title">Erro ao carregar</div>
+      <div class="empty-sub">${esc(e.message)}</div>
+    </div>`;
+  } finally {
+    loading = false;
+  }
+}
+
+function showSkeletons() {
+  document.getElementById('cards-grid').innerHTML = Array(3).fill(0).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton" style="height:20px;width:60%;margin-bottom:14px"></div>
+      <div class="skeleton" style="width:40%"></div>
+      <div class="skeleton" style="width:80%"></div>
+      <div class="skeleton" style="width:55%"></div>
+    </div>
+  `).join('');
+}
+
+// ── STATS ────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('count-export').textContent = cache.export.length;
+  document.getElementById('count-import').textContent = cache.import.length;
+}
+
+// ── SWITCH TAB ───────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-export').className = 'nav-tab' + (tab === 'export' ? ' active-export' : '');
+  document.getElementById('tab-import').className = 'nav-tab' + (tab === 'import' ? ' active-import' : '');
+  document.getElementById('btn-new').className = 'btn-new ' + tab;
+  document.getElementById('btn-new').textContent = tab === 'export' ? '+ Nova Empresa' : '+ Novo Importador';
+  const si = document.getElementById('search-input');
+  si.className = 'search-input' + (tab === 'import' ? ' import-mode' : '');
+  si.value = '';
+  document.getElementById('section-title').textContent = tab === 'export' ? 'Exportadores' : 'Importadores';
+  renderCards();
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('cards-grid').className = v === 'list' ? 'list-view' : '';
+  document.getElementById('vbtn-grid').className = 'view-btn' + (v === 'grid' ? ' active' : '');
+  document.getElementById('vbtn-list').className = 'view-btn' + (v === 'list' ? ' active' : '');
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function renderCards() {
+  const list = cache[currentTab];
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+
+  const filtered = q ? list.filter(c =>
+    [c.name, c.email, c.city, c.country, c.products, c.doc, c.notes,
+     ...(c.contacts||[]).map(ct => ct.name + ' ' + ct.phone + ' ' + ct.role)]
+    .join(' ').toLowerCase().includes(q)
+  ) : list;
+
+  document.getElementById('section-count').textContent = filtered.length + ' registro' + (filtered.length !== 1 ? 's' : '');
+
+  const grid = document.getElementById('cards-grid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state">
+      <span class="empty-icon">${currentTab === 'export' ? '🇧🇷' : '🌍'}</span>
+      <div class="empty-title">${q ? 'Nenhum resultado para "' + esc(q) + '"' : 'Nenhuma empresa cadastrada'}</div>
+      <div class="empty-sub">${q ? 'Tente outra busca.' : 'Clique em "+ Nova Empresa" para começar.'}</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((c, i) => cardHTML(c, i)).join('');
+}
+
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+}
+
+function cardHTML(c, i) {
+  const imp = currentTab === 'import';
+  const delay = Math.min(i * 40, 300);
+  const loc = [c.city, imp && c.country ? c.country : null].filter(Boolean).join(' · ');
+
+  const meta = [
+    c.doc    ? `<div class="meta-item"><span class="meta-icon">📋</span><span class="meta-text">${esc(c.doc)}</span></div>` : '',
+    c.email  ? `<div class="meta-item"><span class="meta-icon">✉</span><span class="meta-text">${esc(c.email)}</span></div>` : '',
+    c.site   ? `<div class="meta-item"><span class="meta-icon">🔗</span><span class="meta-text">${esc(c.site)}</span></div>` : '',
+    c.notes  ? `<div class="meta-item"><span class="meta-icon">📝</span><span class="meta-text">${esc(c.notes)}</span></div>` : '',
+    c.products ? `<div class="meta-item" style="flex-wrap:wrap;gap:3px"><span class="meta-icon">📦</span>${c.products.split(',').map(p=>`<span class="products-tag">${esc(p.trim())}</span>`).join('')}</div>` : '',
+  ].filter(Boolean).join('');
+
+  const ctHTML = (c.contacts||[]).map(ct => `
+    <div class="contact-row ${ct.is_main ? 'is-main ' + currentTab : ''}">
+      <div class="contact-avatar ${currentTab}">${initials(ct.name)}</div>
+      <div class="contact-info">
+        <div class="contact-name-text">${esc(ct.name)}${ct.role ? ` <span style="font-weight:300;color:var(--muted)">· ${esc(ct.role)}</span>` : ''}</div>
+        <div class="contact-sub">${[ct.phone, ct.cemail].filter(Boolean).map(esc).join(' · ')}</div>
+      </div>
+      ${ct.is_main ? '<span class="star-badge">★</span>' : ''}
+    </div>`).join('');
+
+  return `<div class="card ${currentTab}" style="animation-delay:${delay}ms">
+    <div class="card-stripe"></div>
+    <div class="card-body">
+      <div class="card-top">
+        <div>
+          <div class="company-name">${esc(c.name)}</div>
+          ${loc ? `<div class="company-location">${esc(loc)}</div>` : ''}
+        </div>
+        <span class="type-badge ${currentTab}">${imp ? 'Importador' : 'Exportador'}</span>
+      </div>
+      ${meta ? `<div class="card-meta">${meta}</div>` : ''}
+      ${ctHTML ? `<div class="contacts-section"><div class="contacts-head">Contatos</div>${ctHTML}</div>` : ''}
+    </div>
+    <div class="card-footer">
+      <button class="btn-action" onclick="openModal('${c.id}')">✎ Editar</button>
+      <button class="btn-action danger" onclick="deleteCompany('${c.id}')">✕ Excluir</button>
+    </div>
+  </div>`;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── MODAL ────────────────────────────────────────────────
+function configureModal() {
+  const imp = currentTab === 'import';
+  document.getElementById('modal-stripe').className = 'modal-stripe ' + currentTab;
+  document.getElementById('btn-save').className = 'btn-save ' + currentTab;
+  document.getElementById('doc-label').textContent = imp ? 'Tax ID / VAT' : 'CNPJ';
+  document.getElementById('f-doc').placeholder = imp ? 'Ex: NL123456789B01' : '00.000.000/0001-00';
+  document.getElementById('city-label').textContent = imp ? 'Cidade' : 'Cidade / Estado';
+  document.getElementById('f-city').placeholder = imp ? 'Ex: Roterdã' : 'Ex: Petrolina, PE';
+  document.getElementById('products-label').textContent = imp ? 'Produtos Importados' : 'Produtos Exportados';
+  document.getElementById('btn-add-contact').className = 'btn-add-contact' + (imp ? ' import-mode' : '');
+  document.getElementById('country-fg').style.display = imp ? '' : 'none';
+}
+
+function openModal(id) {
+  editingId = id || null;
+  contactCount = 0;
+  document.getElementById('contacts-container').innerHTML = '';
+  const imp = currentTab === 'import';
+  document.getElementById('modal-title').textContent = id ? 'Editar ' + (imp ? 'Importador' : 'Empresa') : (imp ? 'Novo Importador' : 'Nova Empresa');
+  document.getElementById('save-label').textContent = id ? 'Salvar Alterações' : 'Salvar ' + (imp ? 'Importador' : 'Empresa');
+  configureModal();
+
+  const fields = ['f-name','f-doc','f-city','f-country','f-email','f-site','f-products','f-notes'];
+  fields.forEach(f => { document.getElementById(f).value = ''; });
+
+  if (id) {
+    const c = cache[currentTab].find(x => x.id === id);
+    if (c) {
+      document.getElementById('f-name').value = c.name || '';
+      document.getElementById('f-doc').value = c.doc || '';
+      document.getElementById('f-city').value = c.city || '';
+      document.getElementById('f-country').value = c.country || '';
+      document.getElementById('f-email').value = c.email || '';
+      document.getElementById('f-site').value = c.site || '';
+      document.getElementById('f-products').value = c.products || '';
+      document.getElementById('f-notes').value = c.notes || '';
+      (c.contacts || []).forEach(ct => addContactField(ct));
+    }
+  } else {
+    addContactField({ is_main: true });
+  }
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('f-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  editingId = null;
+}
+
+function addContactField(ct) {
+  ct = ct || {};
+  const idx = contactCount++;
+  const imp = currentTab === 'import';
+  const div = document.createElement('div');
+  div.className = 'contact-block';
+  div.id = 'cb-' + idx;
+  div.innerHTML = `
+    <button class="btn-remove" onclick="removeContact(${idx})">✕</button>
+    <div class="form-grid">
+      <div class="fg"><label>Nome Completo</label><input type="text" id="ct-name-${idx}" value="${esc(ct.name||'')}" placeholder="Nome do contato" class="${imp?'import-field':''}"></div>
+      <div class="fg"><label>Cargo / Função</label><input type="text" id="ct-role-${idx}" value="${esc(ct.role||'')}" placeholder="Ex: Diretor Comercial" class="${imp?'import-field':''}"></div>
+    </div>
+    <div class="form-grid">
+      <div class="fg"><label>Telefone / WhatsApp</label><input type="text" id="ct-phone-${idx}" value="${esc(ct.phone||'')}" placeholder="+55 81 9 0000-0000" class="${imp?'import-field':''}"></div>
+      <div class="fg"><label>E-mail do Contato</label><input type="text" id="ct-cemail-${idx}" value="${esc(ct.cemail||'')}" placeholder="nome@empresa.com" class="${imp?'import-field':''}"></div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="ct-main-${idx}" ${ct.is_main?'checked':''}>
+      <label for="ct-main-${idx}" style="cursor:pointer">Contato principal</label>
+    </div>`;
+  document.getElementById('contacts-container').appendChild(div);
+}
+
+function removeContact(idx) {
+  const el = document.getElementById('cb-' + idx);
+  if (el) el.remove();
+}
+
+// ── SAVE ─────────────────────────────────────────────────
+async function saveCompany() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); toast('⚠ Informe o nome da empresa', true); return; }
+
+  const contacts = [];
+  document.querySelectorAll('.contact-block').forEach(block => {
+    const idx = block.id.replace('cb-','');
+    const n = document.getElementById('ct-name-'+idx)?.value.trim();
+    if (n) contacts.push({
+      name: n,
+      role: document.getElementById('ct-role-'+idx)?.value.trim()||'',
+      phone: document.getElementById('ct-phone-'+idx)?.value.trim()||'',
+      cemail: document.getElementById('ct-cemail-'+idx)?.value.trim()||'',
+      is_main: document.getElementById('ct-main-'+idx)?.checked||false,
+    });
+  });
+  if (contacts.length) {
+    const mains = contacts.filter(c=>c.is_main);
+    if (!mains.length) contacts[0].is_main = true;
+    if (mains.length > 1) contacts.forEach((c,i)=>{ if(i>0) c.is_main=false; });
+  }
+
+  const company = {
+    type: currentTab,
+    name,
+    doc: document.getElementById('f-doc').value.trim()||null,
+    city: document.getElementById('f-city').value.trim()||null,
+    country: document.getElementById('f-country').value.trim()||null,
+    email: document.getElementById('f-email').value.trim()||null,
+    site: document.getElementById('f-site').value.trim()||null,
+    products: document.getElementById('f-products').value.trim()||null,
+    notes: document.getElementById('f-notes').value.trim()||null,
+    updated_at: new Date().toISOString(),
+  };
+
+  setSaving(true);
+  try {
+    let companyId = editingId;
+
+    if (editingId) {
+      // UPDATE company
+      const r = await api(`/companies?id=eq.${editingId}`, {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: JSON.stringify(company),
+      });
+      if (!r.ok) throw new Error(await r.text());
+    } else {
+      // INSERT company
+      const r = await api('/companies', {
+        method: 'POST',
+        prefer: 'return=representation',
+        body: JSON.stringify(company),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const rows = await r.json();
+      companyId = rows[0].id;
+    }
+
+    // Delete old contacts then re-insert
+    await api(`/contacts?company_id=eq.${companyId}`, { method: 'DELETE', prefer: '' });
+
+    if (contacts.length) {
+      const ctPayload = contacts.map(ct => ({ ...ct, company_id: companyId }));
+      const r = await api('/contacts', {
+        method: 'POST',
+        prefer: 'return=representation',
+        body: JSON.stringify(ctPayload),
+      });
+      if (!r.ok) throw new Error(await r.text());
+    }
+
+    toast(editingId ? '✓ Empresa atualizada' : '✓ Empresa cadastrada');
+    closeModal();
+    await loadAll();
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, true);
+  } finally {
+    setSaving(false);
+  }
+}
+
+function setSaving(on) {
+  const btn = document.getElementById('btn-save');
+  const sp = document.getElementById('save-spinner');
+  btn.disabled = on;
+  sp.className = 'spinner' + (on ? ' show' : '');
+}
+
+// ── DELETE ───────────────────────────────────────────────
+async function deleteCompany(id) {
+  if (!confirm('Excluir esta empresa? Esta ação não pode ser desfeita.')) return;
+  try {
+    // Contacts deleted automatically via CASCADE
+    const r = await api(`/companies?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    if (!r.ok) throw new Error(await r.text());
+    toast('Empresa removida');
+    await loadAll();
+  } catch(e) {
+    toast('Erro ao excluir: ' + e.message, true);
+  }
+}
+
+// ── KEYBOARD ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.metaKey||e.ctrlKey) && e.key === 'k') { e.preventDefault(); document.getElementById('search-input').focus(); }
+});
+document.getElementById('overlay').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+
+// ── LOGIN ─────────────────────────────────────────────────
+function hashStr(str) {
+  let hash = 0;
+  const salted = 'tb_salt_2026_' + str;
+  for (let i = 0; i < salted.length; i++) {
+    const chr = salted.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return hash.toString(16);
+}
+
+const CORRECT_HASH = '5ab28653';
+
+function doLogin() {
+  const val = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  if (hashStr(val) === CORRECT_HASH) {
+    sessionStorage.setItem('tb_auth', CORRECT_HASH);
+    document.getElementById('login-screen').classList.add('hidden');
+    checkConnection();
+    loadAll();
+  } else {
+    err.textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+    setTimeout(() => { err.textContent = ''; }, 3000);
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────
+if (sessionStorage.getItem('tb_auth') === CORRECT_HASH) {
+  document.getElementById('login-screen').classList.add('hidden');
+  checkConnection();
+  loadAll();
+} else {
+  setTimeout(() => document.getElementById('login-pass').focus(), 100);
+}
+</script>
+</body>
+</html>
