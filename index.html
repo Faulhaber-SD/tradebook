@@ -669,6 +669,32 @@ async function deleteCompany(id) {
   }
 }
 
+// ── KEEP ALIVE ───────────────────────────────────────────
+async function keepAlive() {
+  try {
+    await api('/companies?select=id&limit=1');
+    const now = Date.now();
+    localStorage.setItem('tb_last_ping', now);
+    console.log('[TradeBook] keep-alive ping OK', new Date(now).toISOString());
+  } catch(e) {
+    console.warn('[TradeBook] keep-alive falhou', e.message);
+  }
+}
+
+function scheduleKeepAlive() {
+  const FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
+  const last = parseInt(localStorage.getItem('tb_last_ping') || '0');
+  const diff = Date.now() - last;
+  if (diff >= FIVE_DAYS) {
+    keepAlive();
+  }
+  // Check again every 24h while the page is open
+  setInterval(() => {
+    const last2 = parseInt(localStorage.getItem('tb_last_ping') || '0');
+    if (Date.now() - last2 >= FIVE_DAYS) keepAlive();
+  }, 24 * 60 * 60 * 1000);
+}
+
 // ── KEYBOARD ─────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
@@ -698,6 +724,7 @@ function doLogin() {
     document.getElementById('login-screen').classList.add('hidden');
     checkConnection();
     loadAll();
+    scheduleKeepAlive();
   } else {
     err.textContent = 'Senha incorreta. Tente novamente.';
     document.getElementById('login-pass').value = '';
@@ -711,6 +738,7 @@ if (sessionStorage.getItem('tb_auth') === CORRECT_HASH) {
   document.getElementById('login-screen').classList.add('hidden');
   checkConnection();
   loadAll();
+  scheduleKeepAlive();
 } else {
   setTimeout(() => document.getElementById('login-pass').focus(), 100);
 }
