@@ -2,24 +2,24 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-      - cron: '0 8 * * 1,4'
-        workflow_dispatch:
+    - cron: '0 8 * * 1,4'
+  workflow_dispatch:
 
-        jobs:
-          ping:
-              runs-on: ubuntu-latest
-                  steps:
-                        - name: Ping Supabase
-                                env:
-                                          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-                                                  run: |
-                                                            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-                                                                        "https://damjldmgwksxigxtkass.supabase.co/rest/v1/companies?select=id&limit=1" \
-                                                                                    -H "apikey: ${ANON_KEY}" \
-                                                                                                -H "Authorization: Bearer ${ANON_KEY}")
-                                                                                                          echo "Status HTTP: $STATUS"
-                                                                                                                    if [ "$STATUS" != "200" ]; then
-                                                                                                                                echo "Supabase retornou $STATUS - verificar projeto"
-                                                                                                                                            exit 1
-                                                                                                                                                      fi
-                                                                                                                                                                echo "Supabase ativo OK"
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://damjldmgwksxigxtkass.supabase.co/rest/v1/companies?select=id&limit=1" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Authorization: Bearer ${ANON_KEY}")
+          echo "Status HTTP: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Supabase retornou $STATUS"
+            exit 1
+          fi
+          echo "Supabase ativo OK"
