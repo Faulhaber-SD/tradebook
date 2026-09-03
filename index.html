@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeBook</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --bg:#f5f0e8;--bg2:#ede8dc;--ink:#1a1610;--ink2:#3d3628;--muted:#8a7e6e;
@@ -36,10 +37,11 @@ header{position:relative;z-index:10;background:var(--ink);color:var(--bg);paddin
 .conn-dot.ok{background:#2ecc71}
 .conn-dot.err{background:#e74c3c}
 .conn-dot.loading{background:var(--gold);animation:pulse 1s infinite}
+.btn-logout{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.5px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(245,240,232,.5);cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:rgba(255,255,255,.5);color:rgba(245,240,232,.9)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40px 60px}
-
 .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:28px;animation:fadeUp .4s ease both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .search-wrap{flex:1;position:relative}
@@ -107,7 +109,6 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
 .list-view .contacts-section{display:none}
 .list-view .card-footer{padding:14px 16px;border-top:none;border-left:1px solid var(--bg2);flex-direction:column;justify-content:center}
 
-/* Loading skeleton */
 .skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--border) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;height:14px;margin-bottom:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skeleton-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
@@ -117,7 +118,6 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
 .empty-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--ink2);margin-bottom:6px}
 .empty-sub{font-size:13px;color:var(--muted)}
 
-/* Modal */
 .overlay{display:none;position:fixed;inset:0;background:rgba(26,22,16,.6);backdrop-filter:blur(3px);z-index:1000;align-items:center;justify-content:center;padding:20px}
 .overlay.open{display:flex}
 .modal{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);width:100%;max-width:620px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(26,22,16,.25);animation:modalIn .25s ease}
@@ -172,12 +172,13 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
 .login-box{width:100%;max-width:380px;padding:48px 44px;background:var(--surface);border-radius:6px;box-shadow:0 32px 80px rgba(0,0,0,.4);border-top:4px solid var(--gold)}
 .login-anchor{font-family:'Playfair Display',serif;font-weight:900;font-size:32px;color:var(--ink);margin-bottom:4px;letter-spacing:-1px}
 .login-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:32px}
-.login-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.login-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;margin-top:14px}
 .login-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);outline:none;transition:border-color .2s;margin-bottom:6px}
 .login-input:focus{border-color:var(--gold)}
-.login-error{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c0392b;min-height:18px;margin-bottom:14px;display:block}
-.login-btn{width:100%;padding:13px;background:var(--ink);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .2s}
-.login-btn:hover{opacity:.85}
+.login-error{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c0392b;min-height:18px;margin-bottom:14px;display:block;margin-top:8px}
+.login-btn{width:100%;padding:13px;background:var(--ink);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:var(--r);cursor:pointer;transition:opacity .2s;margin-top:4px}
+.login-btn:hover:not(:disabled){opacity:.85}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
 .login-watermark{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(245,240,232,.2);margin-top:24px;letter-spacing:1px}
 </style>
 </head>
@@ -188,12 +189,14 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
   <div class="login-box">
     <div class="login-anchor">TradeBook</div>
     <div class="login-sub">Gestão de Contatos</div>
-    <label class="login-label" for="login-pass">Senha de acesso</label>
+    <label class="login-label" for="login-email">E-mail</label>
+    <input class="login-input" id="login-email" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    <label class="login-label" for="login-pass">Senha</label>
     <input class="login-input" id="login-pass" type="password" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <span class="login-error" id="login-error"></span>
-    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
   </div>
-  <div class="login-watermark">TradeBook © 2026</div>
+  <div class="login-watermark">TradeBook © 2026 · Acesso protegido</div>
 </div>
 
 <header>
@@ -212,6 +215,7 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
     <div class="stat-pill"><span class="stat-dot" style="background:#c8401a"></span><span class="stat-num" id="count-export">–</span>&nbsp;export.</div>
     <div class="stat-pill"><span class="stat-dot" style="background:#1a5c8a"></span><span class="stat-num" id="count-import">–</span>&nbsp;import.</div>
     <div class="conn-status"><span class="conn-dot loading" id="conn-dot"></span><span id="conn-label">Conectando…</span></div>
+    <button class="btn-logout" onclick="doLogout()">Sair ↩</button>
   </div>
 </header>
 
@@ -253,7 +257,7 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
         <div class="fg"><label>Website</label><input id="f-site" type="text" placeholder="www.empresa.com"></div>
       </div>
       <div class="form-grid full">
-        <div class="fg"><label id="products-label">Produtos Exportados</label><input id="f-products" type="text" placeholder="Ex: Manga Tommy, Melão Amarelo, Uva Thompson"></div>
+        <div class="fg"><label id="products-label">Produtos Exportados</label><input id="f-products" type="text" placeholder="Ex: Manga Tommy, Melão Amarelo"></div>
       </div>
       <div class="form-grid full">
         <div class="fg"><label>Observações</label><input id="f-notes" type="text" placeholder="Notas internas, certificações…"></div>
@@ -275,20 +279,30 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────
-const SUPABASE_URL = 'https://damjldmgwksxigxtkass.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_Nl1xGdyZ1aokQx6QvM-cLw_2Liig24Q';
+// ── SUPABASE ──────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(
+  'https://damjldmgwksxigxtkass.supabase.co',
+  'sb_publishable_Nl1xGdyZ1aokQx6QvM-cLw_2Liig24Q'
+);
 
-const api = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-  headers: {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': opts.prefer || 'return=representation',
-    ...opts.headers
-  },
-  ...opts
-});
+// ── API helper — usa token do usuário autenticado ─────────
+async function api(table, opts = {}) {
+  const session = await sb.auth.getSession();
+  const token = session?.data?.session?.access_token;
+  if (!token) throw new Error('Sessão expirada. Faça login novamente.');
+  const url = `https://damjldmgwksxigxtkass.supabase.co/rest/v1/${table}`;
+  return fetch(url, {
+    ...opts,
+    headers: {
+      'apikey': 'sb_publishable_Nl1xGdyZ1aokQx6QvM-cLw_2Liig24Q',
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers,
+    },
+  });
+}
 
 // ── STATE ────────────────────────────────────────────────
 let currentTab = 'export';
@@ -306,16 +320,14 @@ function toast(msg, isError = false) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── CONNECTION CHECK ─────────────────────────────────────
+// ── CONNECTION CHECK ──────────────────────────────────────
 async function checkConnection() {
   try {
-    const r = await api('/companies?select=id&limit=1');
+    const r = await api('companies?select=id&limit=1');
     if (r.ok) {
       document.getElementById('conn-dot').className = 'conn-dot ok';
       document.getElementById('conn-label').textContent = 'Supabase ✓';
-    } else {
-      throw new Error(r.status);
-    }
+    } else throw new Error(r.status);
   } catch(e) {
     document.getElementById('conn-dot').className = 'conn-dot err';
     document.getElementById('conn-label').textContent = 'Erro de conexão';
@@ -328,43 +340,25 @@ async function loadAll() {
   loading = true;
   showSkeletons();
   try {
-    // Load companies + contacts in parallel
     const [cRes, ctRes] = await Promise.all([
-      api('/companies?select=*&order=created_at.desc'),
-      api('/contacts?select=*&order=created_at.asc')
+      api('companies?select=*&order=created_at.desc'),
+      api('contacts?select=*&order=created_at.asc'),
     ]);
-
     if (!cRes.ok) throw new Error(await cRes.text());
     if (!ctRes.ok) throw new Error(await ctRes.text());
-
     const companies = await cRes.json();
     const contacts  = await ctRes.json();
-
-    // Group contacts by company_id
     const ctMap = {};
-    contacts.forEach(ct => {
-      if (!ctMap[ct.company_id]) ctMap[ct.company_id] = [];
-      ctMap[ct.company_id].push(ct);
-    });
-
-    // Attach contacts to companies
+    contacts.forEach(ct => { if (!ctMap[ct.company_id]) ctMap[ct.company_id] = []; ctMap[ct.company_id].push(ct); });
     companies.forEach(c => { c.contacts = ctMap[c.id] || []; });
-
     cache.export = companies.filter(c => c.type === 'export');
     cache.import = companies.filter(c => c.type === 'import');
-
     updateStats();
     renderCards();
   } catch(e) {
     toast('Erro ao carregar dados: ' + e.message, true);
-    document.getElementById('cards-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <span class="empty-icon">⚠️</span>
-      <div class="empty-title">Erro ao carregar</div>
-      <div class="empty-sub">${esc(e.message)}</div>
-    </div>`;
-  } finally {
-    loading = false;
-  }
+    document.getElementById('cards-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">⚠️</span><div class="empty-title">Erro ao carregar</div><div class="empty-sub">${esc(e.message)}</div></div>`;
+  } finally { loading = false; }
 }
 
 function showSkeletons() {
@@ -374,8 +368,7 @@ function showSkeletons() {
       <div class="skeleton" style="width:40%"></div>
       <div class="skeleton" style="width:80%"></div>
       <div class="skeleton" style="width:55%"></div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 // ── STATS ────────────────────────────────────────────────
@@ -409,25 +402,17 @@ function setView(v) {
 function renderCards() {
   const list = cache[currentTab];
   const q = document.getElementById('search-input').value.toLowerCase().trim();
-
   const filtered = q ? list.filter(c =>
     [c.name, c.email, c.city, c.country, c.products, c.doc, c.notes,
      ...(c.contacts||[]).map(ct => ct.name + ' ' + ct.phone + ' ' + ct.role)]
     .join(' ').toLowerCase().includes(q)
   ) : list;
-
   document.getElementById('section-count').textContent = filtered.length + ' registro' + (filtered.length !== 1 ? 's' : '');
-
   const grid = document.getElementById('cards-grid');
   if (!filtered.length) {
-    grid.innerHTML = `<div class="empty-state">
-      <span class="empty-icon">${currentTab === 'export' ? '🇧🇷' : '🌍'}</span>
-      <div class="empty-title">${q ? 'Nenhum resultado para "' + esc(q) + '"' : 'Nenhuma empresa cadastrada'}</div>
-      <div class="empty-sub">${q ? 'Tente outra busca.' : 'Clique em "+ Nova Empresa" para começar.'}</div>
-    </div>`;
+    grid.innerHTML = `<div class="empty-state"><span class="empty-icon">${currentTab === 'export' ? '🇧🇷' : '🌍'}</span><div class="empty-title">${q ? 'Nenhum resultado para "' + esc(q) + '"' : 'Nenhuma empresa cadastrada'}</div><div class="empty-sub">${q ? 'Tente outra busca.' : 'Clique em "+ Nova Empresa" para começar.'}</div></div>`;
     return;
   }
-
   grid.innerHTML = filtered.map((c, i) => cardHTML(c, i)).join('');
 }
 
@@ -440,7 +425,6 @@ function cardHTML(c, i) {
   const imp = currentTab === 'import';
   const delay = Math.min(i * 40, 300);
   const loc = [c.city, imp && c.country ? c.country : null].filter(Boolean).join(' · ');
-
   const meta = [
     c.doc    ? `<div class="meta-item"><span class="meta-icon">📋</span><span class="meta-text">${esc(c.doc)}</span></div>` : '',
     c.email  ? `<div class="meta-item"><span class="meta-icon">✉</span><span class="meta-text">${esc(c.email)}</span></div>` : '',
@@ -448,7 +432,6 @@ function cardHTML(c, i) {
     c.notes  ? `<div class="meta-item"><span class="meta-icon">📝</span><span class="meta-text">${esc(c.notes)}</span></div>` : '',
     c.products ? `<div class="meta-item" style="flex-wrap:wrap;gap:3px"><span class="meta-icon">📦</span>${c.products.split(',').map(p=>`<span class="products-tag">${esc(p.trim())}</span>`).join('')}</div>` : '',
   ].filter(Boolean).join('');
-
   const ctHTML = (c.contacts||[]).map(ct => `
     <div class="contact-row ${ct.is_main ? 'is-main ' + currentTab : ''}">
       <div class="contact-avatar ${currentTab}">${initials(ct.name)}</div>
@@ -458,7 +441,6 @@ function cardHTML(c, i) {
       </div>
       ${ct.is_main ? '<span class="star-badge">★</span>' : ''}
     </div>`).join('');
-
   return `<div class="card ${currentTab}" style="animation-delay:${delay}ms">
     <div class="card-stripe"></div>
     <div class="card-body">
@@ -506,10 +488,7 @@ function openModal(id) {
   document.getElementById('modal-title').textContent = id ? 'Editar ' + (imp ? 'Importador' : 'Empresa') : (imp ? 'Novo Importador' : 'Nova Empresa');
   document.getElementById('save-label').textContent = id ? 'Salvar Alterações' : 'Salvar ' + (imp ? 'Importador' : 'Empresa');
   configureModal();
-
-  const fields = ['f-name','f-doc','f-city','f-country','f-email','f-site','f-products','f-notes'];
-  fields.forEach(f => { document.getElementById(f).value = ''; });
-
+  ['f-name','f-doc','f-city','f-country','f-email','f-site','f-products','f-notes'].forEach(f => { document.getElementById(f).value = ''; });
   if (id) {
     const c = cache[currentTab].find(x => x.id === id);
     if (c) {
@@ -523,10 +502,7 @@ function openModal(id) {
       document.getElementById('f-notes').value = c.notes || '';
       (c.contacts || []).forEach(ct => addContactField(ct));
     }
-  } else {
-    addContactField({ is_main: true });
-  }
-
+  } else { addContactField({ is_main: true }); }
   document.getElementById('overlay').classList.add('open');
   document.getElementById('f-name').focus();
 }
@@ -569,130 +545,84 @@ function removeContact(idx) {
 async function saveCompany() {
   const name = document.getElementById('f-name').value.trim();
   if (!name) { document.getElementById('f-name').focus(); toast('⚠ Informe o nome da empresa', true); return; }
-
   const contacts = [];
   document.querySelectorAll('.contact-block').forEach(block => {
     const idx = block.id.replace('cb-','');
     const n = document.getElementById('ct-name-'+idx)?.value.trim();
-    if (n) contacts.push({
-      name: n,
-      role: document.getElementById('ct-role-'+idx)?.value.trim()||'',
-      phone: document.getElementById('ct-phone-'+idx)?.value.trim()||'',
-      cemail: document.getElementById('ct-cemail-'+idx)?.value.trim()||'',
-      is_main: document.getElementById('ct-main-'+idx)?.checked||false,
-    });
+    if (n) contacts.push({ name:n, role:document.getElementById('ct-role-'+idx)?.value.trim()||'', phone:document.getElementById('ct-phone-'+idx)?.value.trim()||'', cemail:document.getElementById('ct-cemail-'+idx)?.value.trim()||'', is_main:document.getElementById('ct-main-'+idx)?.checked||false });
   });
   if (contacts.length) {
-    const mains = contacts.filter(c=>c.is_main);
-    if (!mains.length) contacts[0].is_main = true;
-    if (mains.length > 1) contacts.forEach((c,i)=>{ if(i>0) c.is_main=false; });
+    if (!contacts.filter(c=>c.is_main).length) contacts[0].is_main = true;
+    if (contacts.filter(c=>c.is_main).length > 1) contacts.forEach((c,i)=>{ if(i>0) c.is_main=false; });
   }
-
-  const company = {
-    type: currentTab,
-    name,
-    doc: document.getElementById('f-doc').value.trim()||null,
-    city: document.getElementById('f-city').value.trim()||null,
-    country: document.getElementById('f-country').value.trim()||null,
-    email: document.getElementById('f-email').value.trim()||null,
-    site: document.getElementById('f-site').value.trim()||null,
-    products: document.getElementById('f-products').value.trim()||null,
-    notes: document.getElementById('f-notes').value.trim()||null,
-    updated_at: new Date().toISOString(),
-  };
-
+  const company = { type:currentTab, name, doc:document.getElementById('f-doc').value.trim()||null, city:document.getElementById('f-city').value.trim()||null, country:document.getElementById('f-country').value.trim()||null, email:document.getElementById('f-email').value.trim()||null, site:document.getElementById('f-site').value.trim()||null, products:document.getElementById('f-products').value.trim()||null, notes:document.getElementById('f-notes').value.trim()||null, updated_at:new Date().toISOString() };
   setSaving(true);
   try {
     let companyId = editingId;
-
     if (editingId) {
-      // UPDATE company
-      const r = await api(`/companies?id=eq.${editingId}`, {
-        method: 'PATCH',
-        prefer: 'return=representation',
-        body: JSON.stringify(company),
-      });
+      const r = await api(`companies?id=eq.${editingId}`, { method:'PATCH', prefer:'return=representation', body:JSON.stringify(company) });
       if (!r.ok) throw new Error(await r.text());
     } else {
-      // INSERT company
-      const r = await api('/companies', {
-        method: 'POST',
-        prefer: 'return=representation',
-        body: JSON.stringify(company),
-      });
+      const r = await api('companies', { method:'POST', prefer:'return=representation', body:JSON.stringify(company) });
       if (!r.ok) throw new Error(await r.text());
-      const rows = await r.json();
-      companyId = rows[0].id;
+      companyId = (await r.json())[0].id;
     }
-
-    // Delete old contacts then re-insert
-    await api(`/contacts?company_id=eq.${companyId}`, { method: 'DELETE', prefer: '' });
-
+    await api(`contacts?company_id=eq.${companyId}`, { method:'DELETE', prefer:'' });
     if (contacts.length) {
-      const ctPayload = contacts.map(ct => ({ ...ct, company_id: companyId }));
-      const r = await api('/contacts', {
-        method: 'POST',
-        prefer: 'return=representation',
-        body: JSON.stringify(ctPayload),
-      });
+      const r = await api('contacts', { method:'POST', prefer:'return=representation', body:JSON.stringify(contacts.map(ct=>({...ct,company_id:companyId}))) });
       if (!r.ok) throw new Error(await r.text());
     }
-
     toast(editingId ? '✓ Empresa atualizada' : '✓ Empresa cadastrada');
     closeModal();
     await loadAll();
-  } catch(e) {
-    toast('Erro ao salvar: ' + e.message, true);
-  } finally {
-    setSaving(false);
-  }
+  } catch(e) { toast('Erro ao salvar: ' + e.message, true); }
+  finally { setSaving(false); }
 }
 
 function setSaving(on) {
-  const btn = document.getElementById('btn-save');
-  const sp = document.getElementById('save-spinner');
-  btn.disabled = on;
-  sp.className = 'spinner' + (on ? ' show' : '');
+  document.getElementById('btn-save').disabled = on;
+  document.getElementById('save-spinner').className = 'spinner' + (on ? ' show' : '');
 }
 
 // ── DELETE ───────────────────────────────────────────────
 async function deleteCompany(id) {
   if (!confirm('Excluir esta empresa? Esta ação não pode ser desfeita.')) return;
   try {
-    // Contacts deleted automatically via CASCADE
-    const r = await api(`/companies?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    const r = await api(`companies?id=eq.${id}`, { method:'DELETE', prefer:'' });
     if (!r.ok) throw new Error(await r.text());
     toast('Empresa removida');
     await loadAll();
-  } catch(e) {
-    toast('Erro ao excluir: ' + e.message, true);
+  } catch(e) { toast('Erro ao excluir: ' + e.message, true); }
+}
+
+// ── LOGIN / LOGOUT ────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+  if (!email || !pass) { err.textContent = 'Preencha e-mail e senha.'; return; }
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  err.textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    err.textContent = 'E-mail ou senha incorretos.';
+    btn.disabled = false; btn.textContent = 'Entrar';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  } else {
+    document.getElementById('login-screen').classList.add('hidden');
+    checkConnection();
+    loadAll();
   }
 }
 
-// ── KEEP ALIVE ───────────────────────────────────────────
-async function keepAlive() {
-  try {
-    await api('/companies?select=id&limit=1');
-    const now = Date.now();
-    localStorage.setItem('tb_last_ping', now);
-    console.log('[TradeBook] keep-alive ping OK', new Date(now).toISOString());
-  } catch(e) {
-    console.warn('[TradeBook] keep-alive falhou', e.message);
-  }
-}
-
-function scheduleKeepAlive() {
-  const FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
-  const last = parseInt(localStorage.getItem('tb_last_ping') || '0');
-  const diff = Date.now() - last;
-  if (diff >= FIVE_DAYS) {
-    keepAlive();
-  }
-  // Check again every 24h while the page is open
-  setInterval(() => {
-    const last2 = parseInt(localStorage.getItem('tb_last_ping') || '0');
-    if (Date.now() - last2 >= FIVE_DAYS) keepAlive();
-  }, 24 * 60 * 60 * 1000);
+async function doLogout() {
+  await sb.auth.signOut();
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pass').value = '';
+  cache = { export: [], import: [] };
 }
 
 // ── KEYBOARD ─────────────────────────────────────────────
@@ -702,46 +632,24 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('overlay').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
 
-// ── LOGIN ─────────────────────────────────────────────────
-function hashStr(str) {
-  let hash = 0;
-  const salted = 'tb_salt_2026_' + str;
-  for (let i = 0; i < salted.length; i++) {
-    const chr = salted.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0;
-  }
-  return hash.toString(16);
-}
-
-const CORRECT_HASH = '5ab28653';
-
-function doLogin() {
-  const val = document.getElementById('login-pass').value;
-  const err = document.getElementById('login-error');
-  if (hashStr(val) === CORRECT_HASH) {
-    sessionStorage.setItem('tb_auth', CORRECT_HASH);
+// ── INIT ─────────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
     document.getElementById('login-screen').classList.add('hidden');
     checkConnection();
     loadAll();
-    scheduleKeepAlive();
   } else {
-    err.textContent = 'Senha incorreta. Tente novamente.';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').focus();
-    setTimeout(() => { err.textContent = ''; }, 3000);
+    setTimeout(() => document.getElementById('login-email').focus(), 100);
   }
-}
 
-// ── INIT ─────────────────────────────────────────────────
-if (sessionStorage.getItem('tb_auth') === CORRECT_HASH) {
-  document.getElementById('login-screen').classList.add('hidden');
-  checkConnection();
-  loadAll();
-  scheduleKeepAlive();
-} else {
-  setTimeout(() => document.getElementById('login-pass').focus(), 100);
-}
+  // Ouvir mudanças de sessão (expiração automática)
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
+  });
+})();
 </script>
 </body>
 </html>
