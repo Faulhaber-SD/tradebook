@@ -210,6 +210,7 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
   <div class="header-nav">
     <button class="nav-tab active-export" id="tab-export" onclick="switchTab('export')">🇧🇷 Exportadores</button>
     <button class="nav-tab" id="tab-import" onclick="switchTab('import')">🌍 Importadores</button>
+    <button class="nav-tab" id="tab-kpi" onclick="switchTab('kpi')">📊 KPIs</button>
   </div>
   <div class="header-right">
     <div class="stat-pill"><span class="stat-dot" style="background:#c8401a"></span><span class="stat-num" id="count-export">–</span>&nbsp;export.</div>
@@ -237,6 +238,84 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40p
   </div>
   <div id="cards-grid"></div>
 </main>
+
+<!-- KPI Section -->
+<div id="kpi-section" style="display:none">
+<style>
+/* ── KPI ── */
+.kpi-main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 40px 60px}
+.kpi-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;animation:fadeUp .4s ease both}
+.kpi-title{font-family:'Playfair Display',serif;font-weight:700;font-size:28px;letter-spacing:-.5px;color:var(--ink)}
+.kpi-controls{display:flex;gap:10px;align-items:center}
+.kpi-select{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--ink);outline:none;cursor:pointer}
+.kpi-btn-refresh{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.5px;padding:8px 14px;border-radius:var(--r);border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.kpi-btn-refresh:hover{border-color:var(--gold);color:var(--gold)}
+.kpi-updated{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
+
+/* KPI cards row */
+.kpi-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;animation:fadeUp .4s .05s ease both}
+.kpi-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold)}
+.kpi-card.accent-blue::before{background:var(--import)}
+.kpi-card.accent-red::before{background:var(--export)}
+.kpi-card.accent-green::before{background:#2ecc71}
+.kpi-card.accent-purple::before{background:#8e44ad}
+.kpi-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.kpi-value{font-family:'Playfair Display',serif;font-weight:700;font-size:28px;color:var(--ink);line-height:1;margin-bottom:8px}
+.kpi-delta{font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;align-items:center;gap:4px}
+.kpi-delta.up{color:#27ae60}
+.kpi-delta.down{color:#e74c3c}
+.kpi-delta.neutral{color:var(--muted)}
+.kpi-delta-arrow{font-size:13px}
+
+/* Charts row */
+.kpi-charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px;animation:fadeUp .4s .1s ease both}
+.kpi-chart-box{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+.kpi-chart-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:140px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%}
+.bar-track{flex:1;display:flex;align-items:flex-end;width:100%}
+.bar{width:100%;border-radius:2px 2px 0 0;transition:height .5s ease;min-height:2px;position:relative}
+.bar:hover .bar-tip{opacity:1}
+.bar-tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 6px;border-radius:2px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none}
+.bar-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.5px}
+.bar-cur{background:var(--gold)}
+.bar-prev{background:var(--border)}
+
+/* Route breakdown */
+.kpi-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:18px;animation:fadeUp .4s .15s ease both}
+.kpi-table-box{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+.kpi-table-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.kpi-table{width:100%;border-collapse:collapse;font-size:12px}
+.kpi-table th{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 8px 10px 0;border-bottom:1px solid var(--border)}
+.kpi-table td{padding:9px 8px 9px 0;border-bottom:1px solid var(--bg2);color:var(--ink2);font-family:'IBM Plex Mono',monospace}
+.kpi-table td:first-child{font-weight:500;color:var(--ink)}
+.kpi-table tr:last-child td{border-bottom:none}
+
+.kpi-empty{text-align:center;padding:60px 20px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px}
+.kpi-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:80px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px}
+</style>
+
+<div class="kpi-main">
+  <div class="kpi-header">
+    <div>
+      <div class="kpi-title">Performance</div>
+    </div>
+    <div class="kpi-controls">
+      <span class="kpi-updated" id="kpi-updated"></span>
+      <select class="kpi-select" id="kpi-origin-filter" onchange="renderKPI()">
+        <option value="">Todas as origens</option>
+      </select>
+      <select class="kpi-select" id="kpi-dest-filter" onchange="renderKPI()">
+        <option value="">Todos os destinos</option>
+      </select>
+      <select class="kpi-select" id="kpi-month-sel" onchange="renderKPI()"></select>
+      <button class="kpi-btn-refresh" onclick="loadKPI(true)">↻ Atualizar</button>
+    </div>
+  </div>
+  <div id="kpi-body"></div>
+</div>
+</div>
 
 <!-- Modal -->
 <div class="overlay" id="overlay">
@@ -380,15 +459,349 @@ function updateStats() {
 // ── SWITCH TAB ───────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
+  const isKPI = tab === 'kpi';
+
+  // nav tabs
   document.getElementById('tab-export').className = 'nav-tab' + (tab === 'export' ? ' active-export' : '');
   document.getElementById('tab-import').className = 'nav-tab' + (tab === 'import' ? ' active-import' : '');
-  document.getElementById('btn-new').className = 'btn-new ' + tab;
-  document.getElementById('btn-new').textContent = tab === 'export' ? '+ Nova Empresa' : '+ Novo Importador';
-  const si = document.getElementById('search-input');
-  si.className = 'search-input' + (tab === 'import' ? ' import-mode' : '');
-  si.value = '';
-  document.getElementById('section-title').textContent = tab === 'export' ? 'Exportadores' : 'Importadores';
-  renderCards();
+  document.getElementById('tab-kpi').className    = 'nav-tab' + (tab === 'kpi'    ? ' active-export' : '');
+
+  // show/hide sections
+  document.querySelector('main').style.display    = isKPI ? 'none' : '';
+  document.getElementById('kpi-section').style.display = isKPI ? '' : 'none';
+
+  if (!isKPI) {
+    document.getElementById('btn-new').className = 'btn-new ' + tab;
+    document.getElementById('btn-new').textContent = tab === 'export' ? '+ Nova Empresa' : '+ Novo Importador';
+    const si = document.getElementById('search-input');
+    si.className = 'search-input' + (tab === 'import' ? ' import-mode' : '');
+    si.value = '';
+    document.getElementById('section-title').textContent = tab === 'export' ? 'Exportadores' : 'Importadores';
+    renderCards();
+  } else {
+    loadKPI();
+  }
+}
+
+// ── KPI ──────────────────────────────────────────────────
+let kpiData = null;
+let kpiLoaded = false;
+
+// Notion integration IDs
+const NOTION_BOOKINGS_DS = 'eb2f8685-7f3f-824c-9312-873814b1d7d6';
+const NOTION_TARIFF_DS   = '6fff8685-7f3f-828c-8e14-8745496ebfe3';
+
+async function loadKPI(force = false) {
+  if (kpiLoaded && !force) { renderKPI(); return; }
+  document.getElementById('kpi-body').innerHTML =
+    '<div class="kpi-loading"><span style="animation:spin .8s linear infinite;display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%"></span>Buscando dados do Notion…</div>';
+
+  try {
+    // Buscar bookings confirmados via Notion MCP (Claude API)
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4000,
+        system: `Você é um extrator de dados do Notion. Retorne APENAS JSON puro, sem markdown, sem texto extra.
+Formato: {"bookings":[{"mawb":"str","data":"YYYY-MM-DD","origem":"str","destino":"str","peso":num,"skids":num,"compra_kg":num,"venda_kg":num}]}
+Regras: apenas Status da reserva = "Confirmado". compra_kg e venda_kg vêm da tarifa vinculada (Compra (USD/kg) e Venda (USD/kg)). Se não houver tarifa, use 0. origem e destino são os códigos IATA ou nomes curtos.`,
+        messages: [{
+          role: 'user',
+          content: `Consulte a base Bookings do Notion (collection://eb2f8685-7f3f-824c-9312-873814b1d7d6) e retorne todos os embarques confirmados de 2026 com os campos: MAWB, DATA, ORIGEM, DESTINO, Peso reservado (kg), Skids/caixas reservados, e a tarifa de Compra (USD/kg) e Venda (USD/kg) da tarifa vinculada. Retorne JSON.`
+        }],
+        tools: [{
+          type: 'mcp',
+          server_label: 'notion',
+          server_url: 'https://mcp.notion.com/mcp',
+          allowed_tools: ['notion-query-data-sources', 'notion-fetch']
+        }]
+      })
+    });
+
+    if (!resp.ok) throw new Error('API ' + resp.status);
+    const data = await resp.json();
+
+    // Extrair JSON da resposta
+    let raw = '';
+    for (const block of data.content || []) {
+      if (block.type === 'text') raw += block.text;
+    }
+
+    // Parse JSON (remove possíveis blocos markdown)
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    kpiData = parsed.bookings || [];
+    kpiLoaded = true;
+
+    // Populate filters
+    populateKPIFilters();
+    renderKPI();
+
+    // Salvar snapshot no Supabase
+    saveKPISnapshot(kpiData);
+
+    document.getElementById('kpi-updated').textContent =
+      'Atualizado ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+
+  } catch(e) {
+    // Tentar carregar do cache Supabase
+    await loadKPIFromCache();
+  }
+}
+
+async function loadKPIFromCache() {
+  try {
+    const session = await sb.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    const r = await fetch(
+      'https://damjldmgwksxigxtkass.supabase.co/rest/v1/kpi_snapshots?select=data,created_at&order=created_at.desc&limit=1',
+      { headers: { 'apikey': 'sb_publishable_Nl1xGdyZ1aokQx6QvM-cLw_2Liig24Q', 'Authorization': 'Bearer ' + token } }
+    );
+    if (!r.ok) throw new Error('cache vazio');
+    const rows = await r.json();
+    if (!rows.length) throw new Error('sem dados');
+    kpiData = rows[0].data;
+    kpiLoaded = true;
+    const dt = new Date(rows[0].created_at);
+    document.getElementById('kpi-updated').textContent =
+      'Cache de ' + dt.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'});
+    populateKPIFilters();
+    renderKPI();
+  } catch(e) {
+    document.getElementById('kpi-body').innerHTML =
+      '<div class="kpi-empty">Não foi possível carregar os dados.<br>Verifique a conexão com o Notion.</div>';
+  }
+}
+
+async function saveKPISnapshot(data) {
+  try {
+    const session = await sb.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    await fetch('https://damjldmgwksxigxtkass.supabase.co/rest/v1/kpi_snapshots', {
+      method: 'POST',
+      headers: {
+        'apikey': 'sb_publishable_Nl1xGdyZ1aokQx6QvM-cLw_2Liig24Q',
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ data })
+    });
+  } catch(e) { /* silencioso */ }
+}
+
+function populateKPIFilters() {
+  if (!kpiData) return;
+  const origins = [...new Set(kpiData.map(b => b.origem).filter(Boolean))].sort();
+  const dests   = [...new Set(kpiData.map(b => b.destino).filter(Boolean))].sort();
+
+  const oSel = document.getElementById('kpi-origin-filter');
+  const dSel = document.getElementById('kpi-dest-filter');
+  const mSel = document.getElementById('kpi-month-sel');
+
+  oSel.innerHTML = '<option value="">Todas as origens</option>' +
+    origins.map(o => `<option value="${o}">${o}</option>`).join('');
+  dSel.innerHTML = '<option value="">Todos os destinos</option>' +
+    dests.map(d => `<option value="${d}">${d}</option>`).join('');
+
+  // Meses disponíveis
+  const months = [...new Set(kpiData.map(b => b.data?.slice(0,7)).filter(Boolean))].sort().reverse();
+  mSel.innerHTML = months.map((m, i) => {
+    const [y, mo] = m.split('-');
+    const label = new Date(y, mo-1).toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    return `<option value="${m}" ${i===0?'selected':''}>${label}</option>`;
+  }).join('');
+}
+
+function filterKPIData() {
+  if (!kpiData) return [];
+  const origin = document.getElementById('kpi-origin-filter').value;
+  const dest   = document.getElementById('kpi-dest-filter').value;
+  return kpiData.filter(b =>
+    (!origin || b.origem === origin) &&
+    (!dest   || b.destino === dest)
+  );
+}
+
+function aggMonth(data, month) {
+  const rows = data.filter(b => b.data?.startsWith(month));
+  const embarques = rows.length;
+  const peso      = rows.reduce((s,b) => s + (b.peso || 0), 0);
+  const skids     = rows.reduce((s,b) => s + (b.skids || 0), 0);
+  const compra    = rows.reduce((s,b) => s + (b.peso||0) * (b.compra_kg||0), 0);
+  const venda     = rows.reduce((s,b) => s + (b.peso||0) * (b.venda_kg||0), 0);
+  const margem    = venda - compra;
+  return { embarques, peso, skids, compra, venda, margem };
+}
+
+function fmtNum(n, dec=0) {
+  if (n == null || isNaN(n)) return '–';
+  return n.toLocaleString('pt-BR', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function fmtUSD(n) {
+  if (n == null || isNaN(n)) return '–';
+  return 'US$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function delta(cur, prev) {
+  if (!prev) return null;
+  return ((cur - prev) / prev) * 100;
+}
+function deltaHTML(pct) {
+  if (pct == null) return '<span class="kpi-delta neutral">— sem comparativo</span>';
+  const cls = pct >= 0 ? 'up' : 'down';
+  const arr = pct >= 0 ? '▲' : '▼';
+  return `<span class="kpi-delta ${cls}"><span class="kpi-delta-arrow">${arr}</span>${Math.abs(pct).toFixed(1)}% vs mês ant.</span>`;
+}
+
+function renderKPI() {
+  const data = filterKPIData();
+  const selMonth = document.getElementById('kpi-month-sel').value;
+  if (!selMonth) { document.getElementById('kpi-body').innerHTML = '<div class="kpi-empty">Sem dados disponíveis.</div>'; return; }
+
+  // Mês anterior
+  const [y, m] = selMonth.split('-').map(Number);
+  const prevDate = new Date(y, m-2);
+  const prevMonth = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
+
+  const cur  = aggMonth(data, selMonth);
+  const prev = aggMonth(data, prevMonth);
+
+  // Todos os meses disponíveis (últimos 6)
+  const allMonths = [...new Set(kpiData.map(b => b.data?.slice(0,7)).filter(Boolean))].sort();
+  const last6 = allMonths.slice(-6);
+
+  // Por rota
+  const routeMap = {};
+  data.filter(b => b.data?.startsWith(selMonth)).forEach(b => {
+    const key = (b.origem||'?') + ' → ' + (b.destino||'?');
+    if (!routeMap[key]) routeMap[key] = { embarques:0, peso:0, venda:0, compra:0 };
+    routeMap[key].embarques++;
+    routeMap[key].peso   += b.peso || 0;
+    routeMap[key].venda  += (b.peso||0) * (b.venda_kg||0);
+    routeMap[key].compra += (b.peso||0) * (b.compra_kg||0);
+  });
+  const routes = Object.entries(routeMap).sort((a,b) => b[1].peso - a[1].peso).slice(0,8);
+
+  // Por destino
+  const destMap = {};
+  data.filter(b => b.data?.startsWith(selMonth)).forEach(b => {
+    const key = b.destino || '?';
+    if (!destMap[key]) destMap[key] = { embarques:0, peso:0 };
+    destMap[key].embarques++;
+    destMap[key].peso += b.peso || 0;
+  });
+  const dests = Object.entries(destMap).sort((a,b) => b[1].peso - a[1].peso).slice(0,8);
+
+  // Gráfico barras — peso por mês
+  const pesoMax = Math.max(...last6.map(mo => aggMonth(filterKPIData(), mo).peso), 1);
+  const embMax  = Math.max(...last6.map(mo => aggMonth(filterKPIData(), mo).embarques), 1);
+
+  const monthLabel = mo => {
+    const [yy, mm] = mo.split('-');
+    return new Date(yy, mm-1).toLocaleDateString('pt-BR', {month:'short'});
+  };
+
+  document.getElementById('kpi-body').innerHTML = `
+  <div class="kpi-cards">
+    <div class="kpi-card accent-blue">
+      <div class="kpi-label">Embarques</div>
+      <div class="kpi-value">${fmtNum(cur.embarques)}</div>
+      ${deltaHTML(delta(cur.embarques, prev.embarques))}
+    </div>
+    <div class="kpi-card accent-red">
+      <div class="kpi-label">Peso total</div>
+      <div class="kpi-value">${fmtNum(cur.peso)} <span style="font-size:14px;font-family:'IBM Plex Mono',monospace;color:var(--muted)">kg</span></div>
+      ${deltaHTML(delta(cur.peso, prev.peso))}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Receita venda</div>
+      <div class="kpi-value" style="font-size:20px">${fmtUSD(cur.venda)}</div>
+      ${deltaHTML(delta(cur.venda, prev.venda))}
+    </div>
+    <div class="kpi-card accent-purple">
+      <div class="kpi-label">Custo compra</div>
+      <div class="kpi-value" style="font-size:20px">${fmtUSD(cur.compra)}</div>
+      ${deltaHTML(delta(cur.compra, prev.compra))}
+    </div>
+    <div class="kpi-card accent-green">
+      <div class="kpi-label">Margem bruta</div>
+      <div class="kpi-value" style="font-size:20px;color:${cur.margem>=0?'#27ae60':'#e74c3c'}">${fmtUSD(cur.margem)}</div>
+      ${deltaHTML(delta(cur.margem, prev.margem))}
+    </div>
+  </div>
+
+  <div class="kpi-charts">
+    <div class="kpi-chart-box">
+      <div class="kpi-chart-title">Peso por mês (kg)</div>
+      <div class="bar-chart">
+        ${last6.map(mo => {
+          const v = aggMonth(filterKPIData(), mo);
+          const h = Math.round((v.peso / pesoMax) * 100);
+          const isSel = mo === selMonth;
+          return `<div class="bar-wrap">
+            <div class="bar-track"><div class="bar ${isSel?'bar-cur':'bar-prev'}" style="height:${h}%">
+              <span class="bar-tip">${fmtNum(v.peso)} kg</span>
+            </div></div>
+            <div class="bar-label">${monthLabel(mo)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="kpi-chart-box">
+      <div class="kpi-chart-title">Embarques por mês</div>
+      <div class="bar-chart">
+        ${last6.map(mo => {
+          const v = aggMonth(filterKPIData(), mo);
+          const h = Math.round((v.embarques / embMax) * 100);
+          const isSel = mo === selMonth;
+          return `<div class="bar-wrap">
+            <div class="bar-track"><div class="bar ${isSel?'bar-cur':'bar-prev'}" style="height:${h}%">
+              <span class="bar-tip">${v.embarques} embarques</span>
+            </div></div>
+            <div class="bar-label">${monthLabel(mo)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-breakdown">
+    <div class="kpi-table-box">
+      <div class="kpi-table-title">Por rota</div>
+      <table class="kpi-table">
+        <thead><tr>
+          <th>Rota</th><th style="text-align:right">Embarques</th>
+          <th style="text-align:right">Peso (kg)</th><th style="text-align:right">Margem</th>
+        </tr></thead>
+        <tbody>
+          ${routes.length ? routes.map(([rota, v]) => `<tr>
+            <td>${rota}</td>
+            <td style="text-align:right">${v.embarques}</td>
+            <td style="text-align:right">${fmtNum(v.peso)}</td>
+            <td style="text-align:right;color:${v.venda-v.compra>=0?'#27ae60':'#e74c3c'}">${fmtUSD(v.venda-v.compra)}</td>
+          </tr>`).join('') : '<tr><td colspan="4" style="color:var(--muted);padding:16px 0">Sem dados este mês</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+    <div class="kpi-table-box">
+      <div class="kpi-table-title">Por destino</div>
+      <table class="kpi-table">
+        <thead><tr>
+          <th>Destino</th><th style="text-align:right">Embarques</th>
+          <th style="text-align:right">Peso (kg)</th>
+        </tr></thead>
+        <tbody>
+          ${dests.length ? dests.map(([dest, v]) => `<tr>
+            <td>${dest}</td>
+            <td style="text-align:right">${v.embarques}</td>
+            <td style="text-align:right">${fmtNum(v.peso)}</td>
+          </tr>`).join('') : '<tr><td colspan="3" style="color:var(--muted);padding:16px 0">Sem dados este mês</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
 }
 
 function setView(v) {
