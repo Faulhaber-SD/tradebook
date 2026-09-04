@@ -2,7 +2,6 @@ name: KPI Sync — Notion → Supabase
 
 on:
   schedule:
-    # Todo dia às 10:00 UTC (07:00 BRT)
     - cron: '0 10 * * *'
   workflow_dispatch:
 
@@ -15,12 +14,13 @@ jobs:
 
       - name: Sync KPIs do Notion para o Supabase
         env:
-          NOTION_TOKEN:        ${{ secrets.NOTION_TOKEN }}
-          SUPABASE_ANON_KEY:   ${{ secrets.SUPABASE_ANON_KEY }}
+          NOTION_TOKEN:         ${{ secrets.NOTION_TOKEN }}
+          SUPABASE_ANON_KEY:    ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python3 scripts/kpi_sync.py
 
       - name: Ping Supabase keep-alive
+        if: always()
         env:
           ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
@@ -29,3 +29,4 @@ jobs:
             -H "apikey: ${ANON_KEY}" \
             -H "Authorization: Bearer ${ANON_KEY}")
           echo "Supabase status: $STATUS"
+          [ "$STATUS" = "200" ] && echo "✓ Supabase ativo" || echo "⚠ Supabase retornou $STATUS"
